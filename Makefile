@@ -3,7 +3,7 @@ OBJD = ./obj
 HEAD = ./head
 OUT = ./output.out
 DEPS =
-FLAGS =
+FLAGS = -lncurses
 
 DEPSO = $(addprefix $(OBJD)/,$(addsuffix .o,$(DEPS)))
 
