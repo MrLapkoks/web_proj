@@ -3,7 +3,7 @@ OBJD = ./obj
 HEAD = ./head
 OUT = ./output.out
 DEPS =
-FLAGS = -lncurses -pthread
+FLAGS = -lncurses
 
 DEPSO = $(addprefix $(OBJD)/,$(addsuffix .o,$(DEPS)))
 
@@ -17,4 +17,4 @@ $(OBJD)/%.o : $(LIBD)/%.hpp
 	g++ -c $ $< -o $@ $(FLAGS)
 
 $(OUT) : $(DEPSO) $(HEAD)
-	g++ -o $@ server.cpp $(DEPSO) -I $(HEAD)/ $(FLAGS)
+	g++ -o $@ client.cpp $(DEPSO) -I $(HEAD)/ $(FLAGS)
