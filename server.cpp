@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <cstring>
 
+#include <client_manager.h>
+
 using namespace std;
 
 #define MAX_PLAYERS 20
@@ -63,11 +65,15 @@ void login(list<map_obj>* gamestate, int PORT){
                     clients[id] = true;
                     //create player object in gamestate
                     //create thread for client manager.
+                    map_obj tt1;
+                    thread t1 = client_manager(gamestate, &tt1, PORT+1+id, &clients[id], &running);
+                    t1.join();
                     //pass:
                     //map pointer
                     //clients[id] pointer
                     //player pointer
                     //port
+                    //pointer to "close"
                     write(connection, response.c_str(), response.length());
                 }
                 else{

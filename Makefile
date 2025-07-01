@@ -2,7 +2,7 @@ LIBD = ./lib
 OBJD = ./obj
 HEAD = ./head
 OUT = ./output.out
-DEPS =
+DEPS = client_manager
 FLAGS = -lncurses -pthread
 
 DEPSO = $(addprefix $(OBJD)/,$(addsuffix .o,$(DEPS)))
@@ -18,3 +18,7 @@ $(OBJD)/%.o : $(LIBD)/%.hpp
 
 $(OUT) : $(DEPSO) $(HEAD)
 	g++ -o $@ server.cpp $(DEPSO) -I $(HEAD)/ $(FLAGS)
+
+clean::
+	rm $(OBJD)/*.o
+	rm *.out;
