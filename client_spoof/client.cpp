@@ -13,7 +13,7 @@ int main() {
   int sock = 0;
   char buffer[1024] = {0};
   struct sockaddr_in serv_addr;
-  const char *hello = "Hello from client";
+  const char *hello = "[login request]username|123";
 
   // Create socket
   sock = socket(AF_INET, SOCK_STREAM, 0);

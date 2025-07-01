@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ncurses.h>
 #include <string>
+#include <list>
 #include <chrono>
 #include <thread>
 #include <sys/socket.h>
@@ -12,19 +13,22 @@
 
 using namespace std;
 
-struct {
+#define MAX_PLAYERS 20
+
+struct map_obj{
   int xpos;
   int ypos;
-  float rot;
+  int rot;
   string type;
   string name;
   string misc;
-} map_obj;
+};
 
 bool running;
 string test;
 
-void login(int PORT){
+void login(list<map_obj>* gamestate, int PORT){
+    bool clients[MAX_PLAYERS];
     char buffer[1024] = {0};
     int opt = 1;
 
@@ -40,27 +44,56 @@ void login(int PORT){
 
     bind(sockid, (struct sockaddr *)&in_addr, sizeof(in_addr));
     while(running){
-        if (listen(sockid, 3) >= 0) {
-            int connection = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
+        listen(sockid, 3);
+        int connection = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
+        if(connection >= 0){
+            int id;
+            string message, response;
+            for (id = 0; id<MAX_PLAYERS; id++){
+                if(clients[id] == false) break;
+            }
             read(connection, buffer, 1024);
             mvprintw(1,1,buffer);
-            const char* hello = "server responded!";
-            write(connection, hello, strlen(hello));
+            message = buffer;
+            if (message.substr(0,15) == "[login request]"){
+                string name = message.substr(15, name.find("|")-15);
+                response = name+"|"+to_string(PORT+1+id);
+                //test +="2";
+                if(id < 20){
+                    clients[id] = true;
+                    //create player object in gamestate
+                    //create thread for client manager.
+                    //pass:
+                    //map pointer
+                    //clients[id] pointer
+                    //player pointer
+                    //port
+                    write(connection, response.c_str(), response.length());
+                }
+                else{
+                    string errmessage = "login denied - server full";
+                    write(connection, errmessage.c_str(), errmessage.length());
+                }
+            }
+            else{
+                string errmessage = "login denied - bad request";
+                write(connection, errmessage.c_str(), errmessage.length());
+            }
             close(connection);
         }
         this_thread::sleep_for(chrono::milliseconds(10));
     }
     close(sockid);
-    test = buffer;
 }
 
 int main() {
+    list<map_obj> gamestate;
     running = true;
     char ch;
     WINDOW* win = initscr();
     noecho();
     nodelay(win, true);
-    thread join(login, 1234);
+    thread join_th(login, &gamestate, 1234);
     while(true){
         this_thread::sleep_for(chrono::milliseconds(10));
         ch = getch();
@@ -73,7 +106,7 @@ int main() {
             addch(']');
         }
     }
-    join.join();
+    join_th.join();
     mvprintw(5,5, "AAAAAA");
     nodelay(win, false);
     echo();
