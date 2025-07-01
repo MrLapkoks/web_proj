@@ -17,20 +17,12 @@ using namespace std;
 
 #define MAX_PLAYERS 20
 
-struct map_obj{
-  int xpos;
-  int ypos;
-  int rot;
-  string type;
-  string name;
-  string misc;
-};
-
 bool running;
 string test;
 
 void login(list<map_obj>* gamestate, int PORT){
     bool clients[MAX_PLAYERS];
+    thread* client_threads[MAX_PLAYERS];
     char buffer[1024] = {0};
     int opt = 1;
 
@@ -63,11 +55,11 @@ void login(list<map_obj>* gamestate, int PORT){
                 //test +="2";
                 if(id < 20){
                     clients[id] = true;
-                    //create player object in gamestate
-                    //create thread for client manager.
-                    map_obj tt1;
-                    thread t1 = client_manager(gamestate, &tt1, PORT+1+id, &clients[id], &running);
-                    t1.join();
+                    if(client_threads[id]){
+                        client_threads[id]->join();
+                        client_threads[id] = NULL;
+                    }
+                    client_threads[id] = client_manager(gamestate, name, PORT+1+id, &clients[id], &running);
                     //pass:
                     //map pointer
                     //clients[id] pointer
@@ -90,6 +82,11 @@ void login(list<map_obj>* gamestate, int PORT){
         this_thread::sleep_for(chrono::milliseconds(10));
     }
     close(sockid);
+    for (int n = 0; n < MAX_PLAYERS; n++){
+        if (clients[n] == true){
+            client_threads[n]->join();
+        }
+    }
 }
 
 int main() {
@@ -111,6 +108,7 @@ int main() {
             addch(ch);
             addch(']');
         }
+        mvprintw(0,0,to_string(gamestate.size()).c_str());
     }
     join_th.join();
     mvprintw(5,5, "AAAAAA");
