@@ -56,7 +56,7 @@ void login(list<map_obj>* gamestate, int PORT){
             mvprintw(1,1,buffer);
             message = buffer;
             if (message.substr(0,15) == "[login request]"){
-                string name = message.substr(15, name.find("|")-15);
+                string name = message.substr(15, message.find("|")-15);
                 response = name+"|"+to_string(PORT+1+id);
                 //test +="2";
                 if(id < 20){
