@@ -11,6 +11,7 @@
 
 int main() {
   int sock = 0;
+  char buffer[1024] = {0};
   struct sockaddr_in serv_addr;
   const char *hello = "Hello from client";
 
@@ -39,6 +40,9 @@ int main() {
   // Send data
   send(sock, hello, strlen(hello), 0);
   std::cout << "Message sent" << std::endl;
+  std::cout << "waiting for response" << std::endl;
+  read(sock, buffer, 1024);
+  std::cout << "response: " << buffer << std::endl;
 
   // Close socket
   close(sock);

@@ -6,7 +6,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <fcntl.h>
 #include <unistd.h>
+#include <cstring>
 
 using namespace std;
 
@@ -23,32 +25,31 @@ bool running;
 string test;
 
 void login(int PORT){
-    // https://www.tutorialspoint.com/cplusplus/cpp_socket_programming.htm
+    char buffer[1024] = {0};
     int opt = 1;
-    int a;
-    int sockid = socket(AF_INET, SOCK_STREAM, 0);
-    //int new_socket;
+
     struct sockaddr_in in_addr;
     int addr_len = sizeof(in_addr);
-    char buffer[1024] = {0};
-
-    setsockopt(sockid, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     in_addr.sin_family = AF_INET;
     in_addr.sin_addr.s_addr = INADDR_ANY;
     in_addr.sin_port = htons(PORT);
+
+    int sockid = socket(AF_INET, SOCK_STREAM, 0);
+    setsockopt(sockid, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    fcntl(sockid, F_SETFL, O_NONBLOCK);
+
     bind(sockid, (struct sockaddr *)&in_addr, sizeof(in_addr));
-    //while(running){
+    while(running){
         if (listen(sockid, 3) >= 0) {
-            a = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
+            int connection = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
+            read(connection, buffer, 1024);
+            mvprintw(1,1,buffer);
+            const char* hello = "server responded!";
+            write(connection, hello, strlen(hello));
+            close(connection);
         }
-        if (a>0){
-            mvprintw(1,1,"listening");
-        }
-        read(a, buffer, 1024);
-        mvprintw(2,2,buffer);
-        close(a);
         this_thread::sleep_for(chrono::milliseconds(10));
-    //}
+    }
     close(sockid);
     test = buffer;
 }
