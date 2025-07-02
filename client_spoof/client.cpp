@@ -9,6 +9,8 @@
 
 #define PORT 1234
 
+using namespace std;
+
 int main() {
   int sock = 0;
   char buffer[1024] = {0};
@@ -40,6 +42,23 @@ int main() {
   // Send data
   send(sock, hello, strlen(hello), 0);
   std::cout << "Message sent" << std::endl;
+  std::cout << "waiting for response" << std::endl;
+  read(sock, buffer, 1024);
+  close(sock);
+  std::cout << "response: " << buffer << std::endl;
+  std::string portnum = buffer;
+  portnum = portnum.substr(portnum.find("|")+1);
+  std::cout << "[" << portnum << "]" << std::endl;
+  serv_addr.sin_port = htons(stoi(portnum));
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+      std::cerr << "Connection 2 Failed" << std::endl;
+      return -1;
+  }
+  const char *handshake = "[handshake]";
+  send(sock, handshake, strlen(handshake), 0);
+  //std::cout << portnum << std::endl;
+  std::cout << "Handshake sent" << std::endl;
   std::cout << "waiting for response" << std::endl;
   read(sock, buffer, 1024);
   std::cout << "response: " << buffer << std::endl;

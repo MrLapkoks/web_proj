@@ -47,7 +47,8 @@ void login(list<map_obj>* gamestate, int PORT){
                 if(clients[id] == false) break;
             }
             read(connection, buffer, 1024);
-            mvprintw(1,1,buffer);
+            mvprintw(1, 1, buffer);
+            mvprintw(2, 2, to_string(running).c_str());
             message = buffer;
             if (message.substr(0,15) == "[login request]"){
                 string name = message.substr(15, message.find("|")-15);
