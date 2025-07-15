@@ -78,8 +78,8 @@ void login(list<map_obj>* gamestate, int PORT){
                 string errmessage = "login denied - bad request";
                 write(connection, errmessage.c_str(), errmessage.length());
             }
-            close(connection);
         }
+        close(connection);
         this_thread::sleep_for(chrono::milliseconds(10));
     }
     close(sockid);
@@ -116,6 +116,6 @@ int main() {
     nodelay(win, false);
     echo();
     endwin();
-    cout << test;
+    //cout << test;
     return 0;
 }

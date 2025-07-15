@@ -50,7 +50,6 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
 
     char buffer[1024] = {0};
     int opt = 1;
-    int connection;
     bool connection_good = false;
 
     struct sockaddr_in in_addr;
@@ -81,9 +80,9 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
             }else{
                 string errmessage = "bad handshake";
                 write(connection, errmessage.c_str(), errmessage.length());
-                close(connection);
             }
         }
+        close(connection);
         this_thread::sleep_for(chrono::milliseconds(10));
         if (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()-timeout).count()>5000){
             break;}
@@ -91,18 +90,19 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
     if (connection_good){
         string upd;
         while(running){
-            if (read(connection, buffer, 1024)){
-                chrono::steady_clock::time_point timeout = chrono::steady_clock::now();
-                //parse player update
+            int connection = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
+            if (read(connection, buffer, 1024)!=-1){
+                timeout = chrono::steady_clock::now();
             }
             upd = compose_map_update(gamestate_ptr);
-            write(connection, upd.c_str(), upd.length());
+            //write(connection, upd.c_str(), upd.length());
             if (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()-timeout).count()>5000){
                 cout << "player: " << player.name <<" disconnected - timeout\n";
+                break;
             }
+            close(connection);
             this_thread::sleep_for(chrono::milliseconds(10));
         }
-        close(connection);
     }
     close(sockid);
     *taken_ptr = false;
