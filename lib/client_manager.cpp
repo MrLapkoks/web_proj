@@ -34,11 +34,13 @@ string compose_obj(map_obj obj){
     return out;
 }
 
-string compose_map_update(list<map_obj>* gamestate_ptr){
+string compose_map_update(list<map_obj>* gamestate_ptr, map_obj* mypoint = NULL){
     string out = "[mup]";
     list<map_obj>& gamestate = *gamestate_ptr;
     for (std::list<map_obj>::iterator it=gamestate.begin(); it != gamestate.end(); ++it){
-        out += compose_obj(*it);
+        if (&(*it) != mypoint){
+            out += compose_obj(*it);
+        }
     }
     return out;
 }
@@ -90,18 +92,26 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
     if (connection_good){
         string upd;
         while(running){
+            listen(sockid, 3);
             int connection = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
             if (read(connection, buffer, 1024)!=-1){
+                mvprintw(6,10,buffer);
                 timeout = chrono::steady_clock::now();
+                upd = compose_map_update(gamestate_ptr, player_ptr);
+                //write(connection, "test", 4);
+                write(connection, upd.c_str(), upd.length());
             }
-            upd = compose_map_update(gamestate_ptr);
-            //write(connection, upd.c_str(), upd.length());
             if (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()-timeout).count()>5000){
                 cout << "player: " << player.name <<" disconnected - timeout\n";
                 break;
             }
             close(connection);
             this_thread::sleep_for(chrono::milliseconds(10));
+        }
+    }
+    for (std::list<map_obj>::iterator it=gamestate.begin(); it != gamestate.end(); ++it){
+        if (&(*it) == player_ptr){
+            gamestate.erase(it++);
         }
     }
     close(sockid);
