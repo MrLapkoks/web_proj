@@ -4,6 +4,7 @@
 #include <list>
 #include <chrono>
 #include <thread>
+#include <mutex>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -19,6 +20,7 @@ using namespace std;
 
 bool running;
 string test;
+mutex mtx;
 
 void login(list<map_obj>* gamestate, int PORT){
     bool clients[MAX_PLAYERS];
@@ -47,12 +49,12 @@ void login(list<map_obj>* gamestate, int PORT){
                 if(clients[id] == false) break;
             }
             read(connection, buffer, 1024);
-            mvprintw(1, 1, buffer);
-            mvprintw(2, 2, to_string(running).c_str());
+            mvprintw(id*3, 25, buffer);
             message = buffer;
             if (message.substr(0,15) == "[login request]"){
                 string name = message.substr(15, message.find("|")-15);
                 response = name+"|"+to_string(PORT+1+id);
+                mvprintw(id*3+1, 25, response.c_str());
                 //test +="2";
                 if(id < 20){
                     clients[id] = true;
@@ -60,7 +62,7 @@ void login(list<map_obj>* gamestate, int PORT){
                         client_threads[id]->join();
                         client_threads[id] = NULL;
                     }
-                    client_threads[id] = client_manager(gamestate, name, PORT+1+id, &clients[id], &running);
+                    client_threads[id] = client_manager(gamestate, name, PORT+1+id, &clients[id], &running, id, &mtx);
                     //pass:
                     //map pointer
                     //clients[id] pointer
@@ -72,11 +74,13 @@ void login(list<map_obj>* gamestate, int PORT){
                 else{
                     string errmessage = "login denied - server full";
                     write(connection, errmessage.c_str(), errmessage.length());
+                    mvprintw(id*3+2, 25, errmessage.c_str());
                 }
             }
             else{
                 string errmessage = "login denied - bad request";
                 write(connection, errmessage.c_str(), errmessage.length());
+                mvprintw(id*3+2, 25, errmessage.c_str());
             }
         }
         close(connection);
@@ -105,14 +109,13 @@ int main() {
             running = false;
             break;
         }else if (ch != -1){
-            mvaddch(5,5,'[');
+            mvaddch(25,21,'[');
             addch(ch);
             addch(']');
         }
-        mvprintw(0,0,to_string(gamestate.size()).c_str());
+        mvprintw(25,0,to_string(gamestate.size()).c_str());
     }
     join_th.join();
-    mvprintw(5,5, "AAAAAA");
     nodelay(win, false);
     echo();
     endwin();
