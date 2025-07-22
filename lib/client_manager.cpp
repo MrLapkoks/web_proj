@@ -143,7 +143,7 @@ int try_action(list<map_obj>* gamestate_ptr, int x, int y, string type){
         }
     }
     if (type == "none"){
-        gamestate_ptr->push_back(map_obj("field", "none", x, y));
+        gamestate_ptr->push_back(map_obj("field", "empty", x, y));
         return gamestate.back().advance();
     }
     return 0;
