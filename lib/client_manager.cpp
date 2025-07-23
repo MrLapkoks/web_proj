@@ -23,6 +23,22 @@ int hello()
   return 1;
 }
 
+string take_item(string item, const string misc_f){
+    string tag = "[ITM]";
+    int pos = misc_f.find(tag);
+    if (pos == -1){
+        return misc_f + tag + item + "|";
+    }
+    int end = misc_f.find("|", pos+tag.length());
+    if (end == -1){
+        return misc_f + tag + item + "|";
+    }
+    string o = misc_f.substr(0,pos+tag.length());
+    o += item;
+    o += misc_f.substr(end);
+    return o;
+}
+
 string add_money(int amnt, const string misc_f){
     string tag = "[MON]";
     string z = "0";
@@ -35,7 +51,7 @@ string add_money(int amnt, const string misc_f){
         return misc_f + tag + to_string(amnt)+"|";
     }
     int money = stoi(z+misc_f.substr(pos+tag.length()));
-    money = money+amnt;
+    money += amnt;
     string o = misc_f.substr(0,pos+tag.length());
     o += to_string(money);
     o += misc_f.substr(end);
@@ -128,6 +144,14 @@ string compose_map_update(list<map_obj>* gamestate_ptr, map_obj* mypoint = NULL)
         }
     }
     out += "[TIME]" + get_time_str();
+    int m_p = mypoint->misc.find("[MON]") + 5;
+    if (m_p == 4) return out;
+    int e_p = mypoint->misc.find("|", m_p);
+    if (e_p == -1) return out;
+    string money_str = mypoint->misc.substr(m_p, e_p-m_p);
+    if (!money_str.empty()){
+        out += "[MONEY]" + money_str;
+    }
     return out;
 }
 
@@ -218,7 +242,7 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                     int t_p = rec.find("[T]");
                     int end_p = rec.find("|", 1);
                     if (x_p != -1 && y_p != -1 && t_p != -1 && end_p != -1){
-                        int money;
+                        int money = 0;
                         mtx.lock();
                             money = try_action(gamestate_ptr, stoi(rec.substr(x_p+3)), stoi(rec.substr(y_p+3)), rec.substr(t_p+3, end_p-t_p-3));
                         mtx.unlock();
@@ -226,6 +250,8 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                             player.misc = add_money(money, player.misc);
                         }
                     }
+                }else if (rec.substr(0,7) == "|[TAKE]"){
+                    player.misc = take_item(rec.substr(7,1), player.misc);
                 }else if (rec.substr(0,6) == "|[SHT]"){
                     int x_p = rec.find("[X]");
                     int y_p = rec.find("[Y]");
@@ -249,7 +275,7 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                 if(clear_out != player.misc){
                     player.misc = clear_out;
                 }
-                mvprintw(3*id,25,buffer);
+                mvprintw(3*id,25,player.misc.c_str());
 
                 timeout = chrono::steady_clock::now();
                 upd = compose_map_update(gamestate_ptr, player_ptr);
