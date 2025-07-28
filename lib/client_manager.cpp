@@ -167,7 +167,7 @@ int try_action(list<map_obj>* gamestate_ptr, int x, int y, string type){
         }
     }
     if (type == "none"){
-        gamestate_ptr->push_back(map_obj("field", "empty", x, y));
+        gamestate_ptr->push_back(map_obj("field", "none", x, y));
         return gamestate.back().advance();
     }
     return 0;
@@ -316,22 +316,22 @@ map_obj::map_obj(string typ, string nam, int x, int y, int r, string mis){
 int map_obj::advance(){
     // none -> empty -> sown -> watered -> none
     if (name == "none"){
-        name == "empty";
+        name = "empty";
         misc = get_time_str();
         return 10;
     }
     if (name == "empty"){
-        name == "sown";
+        name = "sown";
         misc = get_time_str();
         return 20;
     }
     if (name == "sown"){
-        name == "watered";
+        name = "watered";
         misc = get_time_str();
         return 40;
     }
     if (name == "watered"){
-        name == "none";
+        name = "none";
         misc = get_time_str();
         return 80;
     }
