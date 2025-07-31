@@ -124,14 +124,14 @@ string clear_outdated(const string misc_f){
 }
 
 string compose_obj(map_obj obj){
-    string out = "|";
+    string out = "[OBS]";
     out += "[X]"+to_string(obj.xpos);
     out += "[Y]"+to_string(obj.ypos);
     out += "[R]"+to_string(obj.rot);
     out += "[TYP]"+obj.type;
     out += "[NAM]"+obj.name;
     out += "[MSC]"+obj.misc;
-    out += "|";
+    out += "[OBE]";
     return out;
 }
 
