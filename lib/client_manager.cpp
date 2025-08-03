@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <cstring>
 #include <chrono>
-
 #include <client_manager.h>
 
 using namespace std;
@@ -96,7 +95,6 @@ string died(string player, const string misc_f){
 }
 
 string clear_outdated(const string misc_f){
-    //get_time_diff(time)
     string o = misc_f;
     int i = 0;
     while (o.find("|[SHOT]", i) != -1){
@@ -192,12 +190,12 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
     int sockid = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(sockid, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     fcntl(sockid, F_SETFL, O_NONBLOCK);
-
     bind(sockid, (struct sockaddr *)&in_addr, sizeof(in_addr));
     chrono::steady_clock::time_point timeout = chrono::steady_clock::now();
+    listen(sockid, 3);
+    int connection;
     while(running){
-        listen(sockid, 3);
-        int connection = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
+        connection = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
         if(connection >= 0){
             string message, response;
             read(connection, buffer, 1024);
@@ -215,17 +213,15 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                 write(connection, errmessage.c_str(), errmessage.length());
             }
         }
-        close(connection);
         this_thread::sleep_for(chrono::milliseconds(10));
         if (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()-timeout).count()>5000){
             break;}
     }
     if (connection_good){
         string upd;
+        bool received = false;
         while(running){
-            listen(sockid, 3);
-            int connection = accept(sockid, (struct sockaddr *)&in_addr, (socklen_t *)&addr_len);
-            if (read(connection, buffer, 1024)!=-1){
+            if (recv(connection, buffer, 1024, MSG_DONTWAIT)>0){
                 string rec = buffer;
                 if (rec.substr(0,6) == "|[PUP]"){
                     int x_p = rec.find("[X]");
@@ -237,6 +233,7 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                         player.rot = stoi(rec.substr(r_p+3));
                     }
                 }else if (rec.substr(0,6) == "|[ACT]"){
+                    mvprintw(3*id+1,25,rec.c_str());
                     int x_p = rec.find("[X]");
                     int y_p = rec.find("[Y]");
                     int t_p = rec.find("[T]");
@@ -251,8 +248,10 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                         }
                     }
                 }else if (rec.substr(0,7) == "|[TAKE]"){
+                    mvprintw(3*id+1,25,rec.c_str());
                     player.misc = take_item(rec.substr(7,1), player.misc);
                 }else if (rec.substr(0,6) == "|[SHT]"){
+                    mvprintw(3*id+1,25,rec.c_str());
                     int x_p = rec.find("[X]");
                     int y_p = rec.find("[Y]");
                     int r_p = rec.find("[R]");
@@ -261,12 +260,14 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                         player.misc = shoot(rec.substr(x_p+3, y_p-x_p-3), rec.substr(y_p+3, r_p-y_p-3), rec.substr(r_p+3, end_p-r_p-3), player.misc);
                     }
                 }else if (rec.substr(0,6) == "|[DED]"){
+                    mvprintw(3*id+1,25,rec.c_str());
                     int pl_p = rec.find("[P]");
                     int end_p = rec.find("|", 1);
                     if (pl_p != -1 && end_p != -1){
                         player.misc = died(rec.substr(pl_p+3, end_p-pl_p-3), player.misc);
                     }
                 }else if (rec.substr(0,6) == "|[COL]"){
+                    mvprintw(3*id+1,25,rec.c_str());
                     string z = "0";
                     int amnt = stoi(z+rec.substr(6));
                     player.misc = add_money(amnt, player.misc);
@@ -275,21 +276,27 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                 if(clear_out != player.misc){
                     player.misc = clear_out;
                 }
-                mvprintw(3*id,25,player.misc.c_str());
-
-                timeout = chrono::steady_clock::now();
+                mvprintw(3*id,25,rec.c_str());
                 upd = compose_map_update(gamestate_ptr, player_ptr);
-                //write(connection, "test", 4);
-                write(connection, upd.c_str(), upd.length());
-                mvprintw(3*id+1,25,upd.c_str());
+                int total_sent = 0;
+                while (total_sent < upd.length()){
+                  int sent = send(connection, upd.c_str()+total_sent, upd.length()-total_sent, MSG_NOSIGNAL);
+                  if (sent != -1){
+                    total_sent += sent;
+                  }else {
+                    this_thread::sleep_for(chrono::milliseconds(1));
+                  }
+                }
+                mvprintw(3*id+2,25,get_time_str().c_str());
+                buffer[0] = '\0';
+                timeout = chrono::steady_clock::now();
             }
             if (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()-timeout).count()>5000){
                 string dc_msg = "player: " + player.name +" disconnected - timeout";
                 mvprintw(3*id+2,25,dc_msg.c_str());
                 break;
             }
-            close(connection);
-            this_thread::sleep_for(chrono::milliseconds(10));
+            this_thread::sleep_for(chrono::milliseconds(5));
         }
     }
     for (std::list<map_obj>::iterator it=gamestate.begin(); it != gamestate.end(); ++it){
@@ -299,6 +306,8 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
             mtx.unlock();
         }
     }
+
+    close(connection);
     close(sockid);
     *taken_ptr = false;
 }
