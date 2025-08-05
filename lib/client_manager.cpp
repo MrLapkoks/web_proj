@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include <cerrno>
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
@@ -283,8 +284,10 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                   int sent = send(connection, upd.c_str()+total_sent, upd.length()-total_sent, MSG_NOSIGNAL);
                   if (sent != -1){
                     total_sent += sent;
-                  }else {
+                  }else if(errno == EAGAIN || errno == EWOULDBLOCK){
                     this_thread::sleep_for(chrono::milliseconds(1));
+                  }else {
+                    break;
                   }
                 }
                 mvprintw(3*id+2,25,get_time_str().c_str());
