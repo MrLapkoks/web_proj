@@ -24,7 +24,7 @@ mutex mtx;
 
 void login(list<map_obj>* gamestate, int PORT){
     bool clients[MAX_PLAYERS];
-    thread* client_threads[MAX_PLAYERS];
+    thread* client_threads[MAX_PLAYERS] = {0};
     char buffer[1024] = {0};
     int opt = 1;
 
