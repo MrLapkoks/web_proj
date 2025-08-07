@@ -220,11 +220,12 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
     }
     if (connection_good){
         string upd;
-        bool received = false;
+        bool pup_resp = false;
         while(running){
             if (recv(connection, buffer, 1024, MSG_DONTWAIT)>0){
                 string rec = buffer;
                 if (rec.substr(0,6) == "|[PUP]"){
+                    pup_resp = true;
                     int x_p = rec.find("[X]");
                     int y_p = rec.find("[Y]");
                     int r_p = rec.find("[R]");
@@ -280,14 +281,16 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                 mvprintw(3*id,25,rec.c_str());
                 upd = compose_map_update(gamestate_ptr, player_ptr);
                 int total_sent = 0;
+                if (pup_resp){
                 while (total_sent < upd.length()){
-                  int sent = send(connection, upd.c_str()+total_sent, upd.length()-total_sent, MSG_NOSIGNAL);
-                  if (sent != -1){
-                    total_sent += sent;
-                  }else if(errno == EAGAIN || errno == EWOULDBLOCK){
-                    this_thread::sleep_for(chrono::milliseconds(1));
-                  }else {
-                    break;
+                    int sent = send(connection, upd.c_str()+total_sent, upd.length()-total_sent, MSG_NOSIGNAL);
+                    if (sent != -1){
+                      total_sent += sent;
+                    }else if(errno == EAGAIN || errno == EWOULDBLOCK){
+                      this_thread::sleep_for(chrono::milliseconds(1));
+                    }else {
+                      break;
+                    }
                   }
                 }
                 mvprintw(3*id+2,25,get_time_str().c_str());

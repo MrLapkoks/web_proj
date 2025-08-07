@@ -53,7 +53,7 @@ void login(list<map_obj>* gamestate, int PORT){
             message = buffer;
             if (message.substr(0,15) == "[login request]"){
                 string name = message.substr(15, message.find("|")-15);
-                response = name+"|"+to_string(PORT+1+id);
+                response = name+"#"+to_string(id)+"|"+to_string(PORT+1+id);
                 mvprintw(id*3+1, 25, response.c_str());
                 //test +="2";
                 if(id < 20){
