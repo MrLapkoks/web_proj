@@ -283,7 +283,7 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                 upd = compose_map_update(gamestate_ptr, player_ptr);
                 int total_sent = 0;
                 if (pup_resp){
-                while (total_sent < upd.length()){
+                  while (total_sent < upd.length()){
                     int sent = send(connection, upd.c_str()+total_sent, upd.length()-total_sent, MSG_NOSIGNAL);
                     if (sent != -1){
                       total_sent += sent;
@@ -293,6 +293,7 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                       break;
                     }
                   }
+                  pup_rest = false;
                 }
                 mvprintw(3*id+2,25,get_time_str().c_str());
                 timeout = chrono::steady_clock::now();
