@@ -293,7 +293,7 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                       break;
                     }
                   }
-                  pup_rest = false;
+                  pup_resp = false;
                 }
                 mvprintw(3*id+2,25,get_time_str().c_str());
                 timeout = chrono::steady_clock::now();
