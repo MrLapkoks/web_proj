@@ -223,7 +223,8 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
         bool pup_resp = false;
         while(running){
             if (recv(connection, buffer, 1024, MSG_DONTWAIT)>0){
-                string rec = buffer;
+              string rec = buffer;
+              while (!rec.empty()){
                 if (rec.substr(0,6) == "|[PUP]"){
                     pup_resp = true;
                     int x_p = rec.find("[X]");
@@ -294,8 +295,13 @@ void manage(map_obj* player_ptr, list<map_obj>* gamestate_ptr, int port, bool* t
                   }
                 }
                 mvprintw(3*id+2,25,get_time_str().c_str());
-                buffer[0] = '\0';
                 timeout = chrono::steady_clock::now();
+                if (rec.find("||") == -1){
+                  break;
+                }
+                rec = rec.substr(rec.find("||")+1);
+              }
+              std::fill(std::begin(buffer), std::end(buffer), 0);
             }
             if (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now()-timeout).count()>5000){
                 string dc_msg = "player: " + player.name +" disconnected - timeout";
